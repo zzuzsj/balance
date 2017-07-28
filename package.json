@@ -1,0 +1,20 @@
+{
+  "name": "balance",
+  "version": "1.0.0",
+  "description": "a desktop-app for find balance num in an array",
+  "main": "main.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "electron .",
+    "packager": "electron-packager ./ balance --out dist --win32 --arch=x64 --version 1.6.11 --overwrite"
+  },
+  "keywords": [
+    "balance"
+  ],
+  "author": "zsai",
+  "license": "ISC",
+  "devDependencies": {
+    "electron": "^1.6.11",
+    "electron-packager": "^8.7.2"
+  }
+}

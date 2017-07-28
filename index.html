@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Balance</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+        }
+
+        .wrap {
+            margin: 10px auto;
+            width: 250px;
+        }
+
+        #balanceArray {
+            width: 230px;
+            height: 30px;
+            font-size: 20px;
+            padding: 0 8px;
+        }
+
+        #btn {
+            display: block;
+            width: 250px;
+            height: 40px;
+            background: aquamarine;
+            text-align: center;
+            font-size: 18px;
+            line-height: 40px;
+            color: #333;
+            margin: 0 auto;
+            cursor: pointer;
+        }
+
+        #board {
+            width: 250px;
+            height: 250px;
+            margin: 20px auto;
+            background: antiquewhite;
+            display: block;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="wrap">
+        <input type="text" id="balanceArray" placeholder="1,3,4,5,6">
+    </div>
+    <a id="btn">Click Me To Find Balance</a>
+    <canvas width="500" height="500" id="board"></canvas>
+</body>
+<script src="./trail.js"></script>
+<script src="./particle.js"></script>
+<script>
+    var btn = document.getElementById('btn');
+    var board = document.getElementById('board');
+    var ctx = board.getContext('2d');
+    var containerWid = 500;
+    var containerHei = 500;
+    var dataW = 200;
+    var dataH = 200;
+
+    var partW = 1;
+    var partH = 1;
+    var particleArr = [];
+    var passTime = 0;
+
+    var particleInterval = null;
+
+    var curArray = [];
+    btn.addEventListener('click', function () {
+        ctx.clearRect(0, 0, containerWid, containerHei);
+        var next = true;
+        var array = document.getElementById('balanceArray').value;
+        var arrayEle = array.split(',');
+        for (var i = 0; i < arrayEle.length; i++) {
+            var str = arrayEle[i];
+            console.log(str);
+            if (numberJudge(str).result) {
+                curArray.push(numberJudge(str).num);
+            } else {
+                alert('Input Array As 1,3,5,7,9');
+                next = false;
+                curArray = [];
+                break;
+            }
+        }
+        if (next) {
+            arrayBalance(curArray);
+        } else {
+            return;
+        }
+    })
+
+    function numberJudge(str) {
+        var n = Number(str);
+        if (isNaN(n)) {
+            return {
+                num: n,
+                result: false
+            }
+        }
+        return {
+            num: n,
+            result: true
+        };
+    }
+
+    function arrayBalance(array) {
+        var sum = eval(array.join('+'));
+        var lsum = 0;
+        var lmark = curArray.length - 1;
+        while (lsum <= (sum / 2)) {
+            lsum += curArray[lmark];
+            lmark -= 1;
+        };
+        var bmark = lmark + 1;
+        var bnum = curArray[bmark];
+        if ((sum - bnum) / 2 == (lsum - bnum)) {
+            showMark(bmark, bnum);
+        } else {
+            showText(false);
+        }
+        curArray = [];
+    }
+
+    function showMark(bmark, bnum) {
+        ctx.font = "80px Times New Roman";
+        ctx.fillText(bmark, 300, 215);
+        ctx.fillText(bnum, 300, 315);
+        var startx1 = 300;
+        var starty1 = 115;
+        var startx2 = 300;
+        var starty2 = 215;
+        var textData1 = ctx.getImageData(startx1, starty1, dataW, dataH);
+        var textData2 = ctx.getImageData(startx2, starty2, dataW, dataH);
+        ctx.clearRect(0, 0, containerWid, containerHei);
+        createParticle(textData1, startx1, starty1, textData2, startx2, starty2);
+    }
+
+    function showText(balance) {
+        if (balance) {
+            ctx.font = "34px Times New Roman";
+            ctx.fillStyle = '#3388ff';
+            ctx.fillText('Balance Mark:', 86, 200);
+            ctx.fillText('Balance Number:', 50, 300);
+        } else {
+            ctx.font = "50px Times New Roman";
+            ctx.fillStyle = '#3388ff';
+            ctx.fillText('No Balance Number', 50, 250);
+        }
+    }
+
+    function createParticle(array1, sx1, sy1, array2, sx2, sy2) {
+        if (array1) {
+            for (var m = 0; m < dataW; m += partW) {
+                for (var n = 0; n < dataH; n += partH) {
+                    (function (m, n) {
+                        var index = (n * dataH + m) * 4;
+                        var alpha = array1.data[index + 3];
+                        if (alpha > 127) {
+                            var particle = new zsj.Particle(board, ctx, containerWid, containerHei);
+                            var pcolor = '#3388ff';
+                            var angle = Math.PI * 2 * Math.random();
+                            var cr = 200;
+                            var pstartPos = {
+                                x: containerWid / 2 + Math.sin(angle) * cr,
+                                y: containerHei / 2 + Math.cos(angle) * cr
+                            };
+                            var pendPos = {
+                                x: sx1 + m,
+                                y: sy1 + n
+                            };
+                            var ser = particle._trail.getDistance(pstartPos, pendPos);
+                            var psize = {
+                                w: partW,
+                                h: partH
+                            };
+                            var pduration = 150;
+                            particle.create({
+                                shape: 'rect',//'round' 'rect'
+                                size: psize,//r {w,h}
+                                color: pcolor,
+                                trail: 'curve3',//'line' 'curve2' 'curve3' 'round'
+                                startPos: pstartPos,
+                                endPos: pendPos,
+                                twikle: 0,
+                                gradient: 0,
+                                duration: pduration,
+                                starttime: 0,
+                                movecount: 1
+                            });
+                            particleArr.push(particle);
+                        }
+                    })(m, n);
+                }
+
+            }
+
+        }
+        if (array2) {
+            for (var m = 0; m < dataW; m += partW) {
+                for (var n = 0; n < dataH; n += partH) {
+                    (function (m, n) {
+                        var index = (n * dataH + m) * 4;
+                        var alpha = array2.data[index + 3];
+                        if (alpha > 127) {
+                            var particle = new zsj.Particle(board, ctx, containerWid, containerHei);
+                            var pcolor = '#3388ff';
+                            var angle = Math.PI * 2 * Math.random();
+                            var cr = 200;
+                            var pstartPos = {
+                                x: containerWid / 2 + Math.sin(angle) * cr,
+                                y: containerHei / 2 + Math.cos(angle) * cr
+                            };
+                            var pendPos = {
+                                x: sx2 + m,
+                                y: sy2 + n
+                            };
+                            var ser = particle._trail.getDistance(pstartPos, pendPos);
+                            var psize = {
+                                w: partW,
+                                h: partH
+                            };
+                            var pduration = 150;
+                            particle.create({
+                                shape: 'rect',//'round' 'rect'
+                                size: psize,//r {w,h}
+                                color: pcolor,
+                                trail: 'curve2',//'line' 'curve2' 'curve3' 'round'
+                                startPos: pstartPos,
+                                endPos: pendPos,
+                                twikle: 0,
+                                gradient: 0,
+                                duration: pduration,
+                                starttime: 0,
+                                movecount: 1
+                            });
+                            particleArr.push(particle);
+                        }
+                    })(m, n);
+                }
+            }
+        }
+        animate();
+    }
+
+    function animate() {
+        passTime++;
+        ctx.clearRect(0, 0, containerWid, containerHei);
+        showText(true);
+        for (var i = 0; i < particleArr.length; i++) {
+            var particle = particleArr[i];
+            particle.animate(passTime);
+        }
+
+        // your code goes here 
+
+        particleInterval = requestAnimationFrame(animate);
+        if (passTime == 150) {
+            cancelAnimationFrame(particleInterval);
+            passTime = 0;
+            particleArr = [];
+        }
+    }
+
+</script>
+
+</html>
